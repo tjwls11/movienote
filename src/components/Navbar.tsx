@@ -3,19 +3,21 @@
 import Link from 'next/link'
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useSession, signOut, getSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 
-interface User {
-  id: string
-  email: string
-  image?: string
+interface UserData {
   name?: string
-  [key: string]: any
+  email?: string
+  image?: string
+}
+
+interface Session {
+  user?: UserData
 }
 
 export default function Navbar() {
   const { data: session } = useSession()
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<UserData | null>(null)
 
   useEffect(() => {
     if (session?.user?.email) {

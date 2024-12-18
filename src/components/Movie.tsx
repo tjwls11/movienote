@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 // Movie 컴포넌트에서 사용될 타입 정의
 interface Movie {
@@ -46,39 +47,44 @@ export default function Movie() {
   const [genre, setGenre] = useState<string>('all')
   const [totalPages, setTotalPages] = useState<number>(0)
   const [searchQuery, setSearchQuery] = useState<string>('') // 검색 쿼리 상태 추가
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [currentPage, setCurrentPage] = useState<number>(1)
 
   const apiKey = process.env.NEXT_PUBLIC_MOVIE_API_KEY
 
   // 영화 목록 불러오기
-  const fetchMovies = async (
-    newPage: number,
-    newGenre: string,
-    query: string
-  ) => {
-    try {
-      let url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&page=${newPage}&sort_by=popularity.desc&adult=false&region=KR&language=ko-KR`
+  const fetchMovies = useCallback(
+    async (newPage: number = 1) => {
+      setIsLoading(true)
+      try {
+        let url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&page=${newPage}&sort_by=popularity.desc&adult=false&region=KR&language=ko-KR`
 
-      if (newGenre !== 'all') {
-        url += `&with_genres=${newGenre}`
+        if (genre !== 'all') {
+          url += `&with_genres=${genre}`
+        }
+
+        if (searchQuery) {
+          // 검색 쿼리가 있을 경우 search/movie 엔드포인트 사용
+          url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${searchQuery}&page=${newPage}&language=ko-KR`
+        }
+
+        const response = await axios.get(url)
+        setAllMovies(response.data.results) // 전체 영화 저장
+        setTotalPages(response.data.total_pages)
+        setCurrentPage(newPage)
+      } catch (error) {
+        console.error('영화 목록을 불러오는 데 실패했습니다:', error)
+      } finally {
+        setIsLoading(false)
       }
-
-      if (query) {
-        // 검색 쿼리가 있을 경우 search/movie 엔드포인트 사용
-        url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${query}&page=${newPage}&language=ko-KR`
-      }
-
-      const response = await axios.get(url)
-      setAllMovies(response.data.results) // 전체 영화 저장
-      setTotalPages(response.data.total_pages)
-    } catch (error) {
-      console.error('영화 목록을 불러오는 데 실패했습니다:', error)
-    }
-  }
+    },
+    [apiKey, genre, searchQuery]
+  )
 
   // 컴포넌트가 마운트될 때, 또는 페이지나 장르가 변경될 때 영화 목록을 불러옴
   useEffect(() => {
-    fetchMovies(page, genre, searchQuery)
-  }, [page, genre, searchQuery])
+    fetchMovies(1)
+  }, [fetchMovies])
 
   // 장르 변경 시 드롭다운으로 변경
   const handleGenreChange = (newGenre: string) => {
@@ -118,10 +124,12 @@ export default function Movie() {
         onClick={handleMovieClick}
         className="bg-white rounded-lg overflow-hidden transition-transform transform hover:scale-105 cursor-pointer w-64 m-4 flex flex-col items-center border border-gray-300"
       >
-        <img
+        <Image
           src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
           alt={movie.title}
-          className="w-32 h-48 object-cover mt-5"
+          width={200}
+          height={300}
+          layout="responsive"
         />
         <div className="p-4 h-full flex flex-col justify-between items-center">
           <p className="text-gray-600 text-center">
@@ -148,7 +156,7 @@ export default function Movie() {
           />
           <select
             className="text-lg font-medium p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 ml-4"
-            onChange={(e) => handleGenreChange(e.target.value)} // 장르 변경
+            onChange={(e) => handleGenreChange(e.target.value)} // ���르 변경
           >
             {Object.entries(genreTranslations).map(([key, value]) => (
               <option key={key} value={key}>
@@ -161,7 +169,7 @@ export default function Movie() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {allMovies.map((movie) => (
+        {movies.map((movie) => (
           <MovieCard key={movie.id} movie={movie} />
         ))}
       </div>
@@ -184,6 +192,10 @@ export default function Movie() {
           </button>
         )}
       </div>
+
+      {isLoading && <div>Loading...</div>}
+
+      <div>Current Page: {currentPage}</div>
     </div>
   )
 }

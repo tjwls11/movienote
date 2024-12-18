@@ -1,5 +1,6 @@
 // src/app/movie/[id]/page.tsx
 import React from 'react'
+import Image from 'next/image'
 
 interface MovieDetail {
   id: number
@@ -59,10 +60,12 @@ export default async function MoviePage({
       <div className="flex flex-col md:flex-row items-start">
         {/* 영화 포스터 */}
         <div className="md:w-1/3 mb-6 md:mb-0">
-          <img
+          <Image
             src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
             alt={movie.title}
-            className="w-full h-auto max-h-80 rounded-lg object-contain"
+            width={500}
+            height={300}
+            layout="responsive"
           />
         </div>
         {/* 영화 정보 */}

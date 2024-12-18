@@ -13,7 +13,7 @@ export default function EditPost() {
     content: '',
     author: '',
   })
-  const [isLoading, setIsLoading] = useState(false)
+  const [, setIsLoading] = useState(false)
 
   useEffect(() => {
     const loadPost = async () => {

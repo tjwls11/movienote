@@ -1,4 +1,4 @@
-import mongoose, { Schema } from 'mongoose'
+import mongoose from 'mongoose'
 
 // 기존 모델 삭제 (이미 잘못된 스키마로 생성된 경우)
 if (mongoose.models.Memo) {
@@ -6,7 +6,7 @@ if (mongoose.models.Memo) {
 }
 
 // 스키마 재정의
-const memoSchema = new Schema(
+const memoSchema = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -20,13 +20,9 @@ const memoSchema = new Schema(
       type: String,
       required: true,
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
+    folderId: {
+      type: String,
+      default: null,
     },
   },
   {
@@ -36,6 +32,6 @@ const memoSchema = new Schema(
   }
 )
 
-const Memo = mongoose.model('Memo', memoSchema)
+const Memo = mongoose.models.Memo || mongoose.model('Memo', memoSchema)
 
 export default Memo

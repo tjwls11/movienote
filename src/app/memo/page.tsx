@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import MemoList from '@/components/MemoList'
-import Loading from '@/components/Loading'
 import { Memo } from '@/types/memo'
 
 export default function MemoPage() {

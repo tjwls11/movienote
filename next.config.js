@@ -12,13 +12,13 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'image.tmdb.org', // 호스트 이름
+        hostname: 'image.tmdb.org',
         port: '',
-        pathname: '/t/p/w500/**', // 필요한 경로 패턴
+        pathname: '/t/p/w500/**',
       },
     ],
-    domains: ['image.tmdb.org'], // TMDB 이미지 호스트 추가
+    domains: ['image.tmdb.org'],
   },
 }
 
-export default nextConfig
+module.exports = nextConfig

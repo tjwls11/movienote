@@ -1,6 +1,5 @@
 import React from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
 
 export default function MovieNotePage() {
   return (
@@ -55,7 +54,7 @@ export default function MovieNotePage() {
           </div>
 
           <div className="bg-white shadow-lg rounded-lg p-8 border border-gray-200">
-            <h3 className="text-2xl font-semibold mb-4">커뮤니티 페이지</h3>
+            <h3 className="text-2xl font-semibold mb-4">커뮤니티 페���지</h3>
             <Image
               src="/community-page.jpg" // 커뮤니티 페이지 이미지 경로
               alt="커뮤니티 페이지"
@@ -85,7 +84,7 @@ export default function MovieNotePage() {
               className="rounded-lg mb-4"
             />
             <p className="text-gray-700 leading-relaxed">
-              영화 페이지에서는 다양한 영화 정보를 검색하고 확인할 수 있습니다.
+              영화 페이지에서는 다양�� 영화 정보를 검색하고 확인할 수 있습니다.
               사용자는 원하는 영화를 쉽게 찾고, 관련 정보를 확인할 수 있습니다.
             </p>
           </div>

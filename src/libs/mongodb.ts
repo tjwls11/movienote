@@ -16,11 +16,11 @@ export async function connectMongoDB() {
       throw new Error('MongoDB URI가 .env 파일에 없습니다')
     }
 
-    await mongoose.connect(process.env.MONGODB_URI)
+    await mongoose.connect(process.env.MONGODB_URI as string)
     isConnected = true
-    console.log('MongoDB(Mongoose)에 연결되었습니다')
+    console.log('Connected to MongoDB')
   } catch (error) {
-    console.error('MongoDB 연결 에러:', error)
+    console.error('Error connecting to MongoDB: ', error)
     throw error
   }
 }
@@ -54,3 +54,5 @@ export function getDatabase() {
   }
   return mongoose.connection.db
 }
+
+export default connectMongoDB

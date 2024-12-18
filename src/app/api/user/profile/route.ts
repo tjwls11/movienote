@@ -2,6 +2,22 @@ import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/libs/mongodb'
 import { auth } from '@/auth'
 
+interface UserProfile {
+  name: string
+  email: string
+}
+
+interface RequestData {
+  name: string
+  email: string
+}
+
+interface UserData {
+  name: string
+  email: string
+  // 기타 필요한 필드
+}
+
 export async function GET() {
   try {
     // 현재 로그인된 세션 확인
@@ -122,7 +138,8 @@ export async function POST(req: Request) {
 }
 
 // 프로필 복원 요청 처리
-export async function PUT() {
+export async function PUT(request: Request) {
+  const data: UserData = await request.json()
   try {
     const session = await auth()
 

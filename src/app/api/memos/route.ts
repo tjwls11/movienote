@@ -41,21 +41,8 @@ export async function POST(request: Request) {
       { message: 'Memo created successfully', memo: newMemo },
       { status: 201 }
     )
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error('상세 에러 정보:', {
-        이름: error.name,
-        메시지: error.message,
-        스택: error.stack,
-      })
-    } else {
-      console.error('알 수 없는 에러:', error)
-    }
-
-    return NextResponse.json(
-      { message: '서버 내부 오류가 발생했습니다' },
-      { status: 500 }
-    )
+  } catch (_error) {
+    return new Response('Error occurred', { status: 500 })
   }
 }
 

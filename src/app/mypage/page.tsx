@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { FaHistory, FaHeart, FaComment, FaCamera } from 'react-icons/fa'
+import { FaHistory, FaHeart, FaCamera } from 'react-icons/fa'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 

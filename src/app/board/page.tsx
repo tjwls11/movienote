@@ -16,13 +16,7 @@ interface Post {
   categoryName: string
 }
 
-type CategoryId = 1 | 2 | 3 | 4
-const CATEGORIES: Record<CategoryId, string> = {
-  1: '영화토론',
-  2: '영화수다',
-  3: '후기/리뷰',
-  4: '스포',
-}
+const CATEGORIES = ['영화토론', '영화수다', '후기/리뷰', '스포']
 
 export default function Board() {
   const [posts, setPosts] = useState<Post[]>([])
