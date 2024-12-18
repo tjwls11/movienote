@@ -1,15 +1,66 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { config } from '@/auth'
 import { connectToDatabase } from '@/libs/mongodb'
+import { auth } from '@/auth'
 
 export async function GET() {
   try {
-    const session = await getServerSession(config)
+    const session = await auth()
 
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session || !session.user?.email) {
+      return NextResponse.json(
+        { error: '로그인이 필요합니다.' },
+        { status: 401 }
+      )
     }
+
+    const db = await connectToDatabase()
+    const user = await db
+      .collection('users')
+      .findOne({ email: session.user.email }, { projection: { password: 0 } })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: '사용자를 찾을 수 없습니다.' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(user)
+  } catch (error) {
+    console.error('프로필 조회 에러:', error)
+    return NextResponse.json(
+      { error: '사용자 정보를 가져오는데 실패했습니다.' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const session = await auth()
+
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: '로그인이 필요합니다.' },
+        { status: 401 }
+      )
+    }
+
+    const formData = await req.formData()
+    const imageFile = formData.get('image') as File
+
+    if (!imageFile) {
+      return NextResponse.json(
+        { error: '이미지가 필요합니다.' },
+        { status: 400 }
+      )
+    }
+
+    const bytes = await imageFile.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    const base64Image = `data:${imageFile.type};base64,${buffer.toString(
+      'base64'
+    )}`
 
     const db = await connectToDatabase()
     const user = await db
@@ -17,53 +68,103 @@ export async function GET() {
       .findOne({ email: session.user.email })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: '사용자를 찾을 수 없습니다.' },
+        { status: 404 }
+      )
+    }
+
+    const updateData: any = {
+      image: base64Image,
+      updatedAt: new Date(),
+    }
+
+    if (!user.originalSocialImage && session.user.image) {
+      updateData.originalSocialImage = session.user.image
+    }
+
+    const result = await db
+      .collection('users')
+      .findOneAndUpdate(
+        { email: session.user.email },
+        { $set: updateData },
+        { returnDocument: 'after' }
+      )
+
+    if (!result) {
+      return NextResponse.json({ error: '업데이트 실패' }, { status: 500 })
     }
 
     return NextResponse.json({
-      id: user._id.toString(),
-      name: user.name,
-      email: user.email,
-      type: user.type,
+      success: true,
+      user: {
+        ...result,
+        id: result._id.toString(),
+        image: base64Image,
+      },
     })
   } catch (error) {
-    console.error('Profile API Error:', error)
+    console.error('Profile update error:', error)
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { error: '프로필 업데이트에 실패했습니다.' },
       { status: 500 }
     )
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT() {
   try {
-    const session = await getServerSession(config)
+    const session = await auth()
 
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const data = await request.json()
-    const { name } = data
-
-    if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: '로그인이 필요합니다.' },
+        { status: 401 }
+      )
     }
 
     const db = await connectToDatabase()
-    const result = await db
+    const user = await db
       .collection('users')
-      .updateOne({ email: session.user.email }, { $set: { name } })
+      .findOne({ email: session.user.email })
 
-    if (result.matchedCount === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    if (!user?.originalSocialImage) {
+      return NextResponse.json(
+        { error: '복원할 소셜 이미지가 없습니다.' },
+        { status: 400 }
+      )
     }
 
-    return NextResponse.json({ message: 'Profile updated successfully' })
+    const result = await db.collection('users').findOneAndUpdate(
+      { email: session.user.email },
+      {
+        $set: {
+          image: user.originalSocialImage,
+        },
+        $unset: { originalSocialImage: '' },
+      },
+      { returnDocument: 'after' }
+    )
+
+    if (!result) {
+      return NextResponse.json(
+        { error: '프로필 복원에 실패했습니다.' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        ...result,
+        id: result._id.toString(),
+        image: user.originalSocialImage,
+      },
+    })
   } catch (error) {
-    console.error('Profile Update Error:', error)
+    console.error('Profile restore error:', error)
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { error: '프로필 복원에 실패했습니다.' },
       { status: 500 }
     )
   }
