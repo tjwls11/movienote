@@ -5,6 +5,7 @@ import axios from 'axios'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Loading from '@/components/Loading'
 
 // Movie 컴포넌트에서 사용될 타입 정의
 interface Movie {
@@ -64,12 +65,12 @@ export default function Movie() {
         }
 
         if (searchQuery) {
-          // 검색 쿼리가 있을 경우 search/movie 엔드포인트 사용
           url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${searchQuery}&page=${newPage}&language=ko-KR`
         }
 
         const response = await axios.get(url)
-        setAllMovies(response.data.results) // 전체 영화 저장
+        setAllMovies(response.data.results)
+        setMovies(response.data.results)
         setTotalPages(response.data.total_pages)
         setCurrentPage(newPage)
       } catch (error) {
@@ -144,58 +145,66 @@ export default function Movie() {
   }
 
   return (
-    <div className="container mx-auto px-4 md:px-20 py-10">
-      <div className="mb-12 flex justify-between items-center">
-        <h1 className="text-4xl font-bold text-left mb-6">영화 목록</h1>
-        <div className="flex">
-          <input
-            type="text"
-            placeholder="제목으로 검색"
-            className="text-lg font-medium p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-            onChange={(e) => setSearchQuery(e.target.value)} // 검색 쿼리 업데이트
-          />
-          <select
-            className="text-lg font-medium p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 ml-4"
-            onChange={(e) => handleGenreChange(e.target.value)} // ���르 변경
-          >
-            {Object.entries(genreTranslations).map(([key, value]) => (
-              <option key={key} value={key}>
-                {value}
-              </option>
-            ))}
-            <option value="all">전체</option>
-          </select>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 md:px-20 py-10">
+        {isLoading ? (
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <Loading pageName="영화 목록" />
+          </div>
+        ) : (
+          <div className="flex flex-col min-h-[60vh]">
+            <div className="mb-12 flex flex-col md:flex-row justify-between items-center gap-4">
+              <h1 className="text-4xl font-bold text-left mb-6">영화 목록</h1>
+              <div className="flex flex-col md:flex-row gap-4">
+                <input
+                  type="text"
+                  placeholder="제목으로 검색"
+                  className="text-lg font-medium p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 w-full md:w-auto"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <select
+                  className="text-lg font-medium p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 w-full md:w-auto"
+                  onChange={(e) => handleGenreChange(e.target.value)}
+                >
+                  <option value="all">전체</option>
+                  {Object.entries(genreTranslations).map(([key, value]) => (
+                    <option key={key} value={key}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {movies.map((movie) => (
-          <MovieCard key={movie.id} movie={movie} />
-        ))}
-      </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 place-items-center">
+              {movies.map((movie) => (
+                <MovieCard key={movie.id} movie={movie} />
+              ))}
+            </div>
 
-      <div className="flex justify-center mt-12 space-x-4">
-        {page > 1 && (
-          <button
-            onClick={() => setPage(page - 1)}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-          >
-            이전
-          </button>
+            <div className="flex justify-center mt-12 space-x-4">
+              {page > 1 && (
+                <button
+                  onClick={() => setPage(page - 1)}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  이전
+                </button>
+              )}
+              {page < totalPages && (
+                <button
+                  onClick={() => setPage(page + 1)}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  다음
+                </button>
+              )}
+            </div>
+
+            <div className="text-center mt-4">Current Page: {currentPage}</div>
+          </div>
         )}
-        {page < totalPages && (
-          <button
-            onClick={() => setPage(page + 1)}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-          >
-            다음
-          </button>
-        )}
       </div>
-
-      {isLoading && <div>Loading...</div>}
-
-      <div>Current Page: {currentPage}</div>
     </div>
   )
 }

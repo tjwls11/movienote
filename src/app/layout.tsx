@@ -1,7 +1,10 @@
-import Providers from '@/components/Providers'
 import './globals.css'
-import Footer from '@/components/Footer'
+import { Inter } from 'next/font/google'
+import Providers from '@/components/Providers'
 import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: 'Movie Note',
@@ -14,11 +17,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ko" className="h-full">
-      <body className="h-full">
+    <html lang="ko" suppressHydrationWarning>
+      <body
+        className={`${inter.className} antialiased min-h-screen flex flex-col`}
+      >
         <Providers>
           <Navbar />
-          {children}
+          <main className="flex-grow">{children}</main>
           <Footer />
         </Providers>
       </body>

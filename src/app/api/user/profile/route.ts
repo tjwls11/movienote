@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/libs/mongodb'
-import { auth } from '@/auth'
+import { getServerSession } from 'next-auth'
+import { auth, config } from '@/auth'
 
 export async function GET() {
   try {
-    const session = await auth()
+    const session = await getServerSession(config)
+    console.log('Session:', session)
 
     if (!session || !session.user?.email) {
       return NextResponse.json(
@@ -14,9 +16,11 @@ export async function GET() {
     }
 
     const db = await connectToDatabase()
+
     const user = await db
       .collection('users')
-      .findOne({ email: session.user.email }, { projection: { password: 0 } })
+      .findOne({ email: session.user.email })
+    console.log('User found:', user)
 
     if (!user) {
       return NextResponse.json(
@@ -25,11 +29,27 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json(user)
+    const response = {
+      success: true,
+      user: {
+        id: user._id.toString(),
+        name: user.name || session.user.name,
+        email: user.email,
+        image: user.image || session.user.image,
+        createdAt: user.createdAt,
+        originalSocialImage: user.originalSocialImage,
+      },
+    }
+    console.log('Response:', response)
+
+    return NextResponse.json(response)
   } catch (error) {
-    console.error('프로필 조회 에러:', error)
+    console.error('프로필 조회 상세 에러:', error)
     return NextResponse.json(
-      { error: '사용자 정보를 가져오는데 실패했습니다.' },
+      {
+        error: '사용자 정보를 가져오는데 실패했습니다.',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     )
   }

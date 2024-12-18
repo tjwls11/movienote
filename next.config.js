@@ -1,27 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverActions: true,
-  },
   images: {
-    domains: [
-      'image.tmdb.org',
-      'lh3.googleusercontent.com',
-      'avatars.githubusercontent.com',
+    domains: ['image.tmdb.org'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'image.tmdb.org',
+        pathname: '/t/p/**',
+      },
     ],
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  webpack: (config) => {
-    config.module.rules.push({
-      test: /\.css$/,
-      use: ['style-loader', 'css-loader', 'postcss-loader'],
-    })
-    return config
+  reactStrictMode: true,
+  swcMinify: true,
+  poweredByHeader: false,
+  compiler: {
+    styledComponents: true,
   },
 }
 

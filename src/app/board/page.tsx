@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import Loading from '@/components/Loading'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Sidebar from '@/components/Sidebar'
 
 interface Post {
@@ -12,49 +12,47 @@ interface Post {
   content: string
   author: string
   date: string
-  categoryId: number
   categoryName: string
 }
 
-const CATEGORIES = ['영화토론', '영화수다', '후기/리뷰', '스포']
-
 export default function Board() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [posts, setPosts] = useState<Post[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const { data: session } = useSession()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
+        setLoading(true)
         const response = await fetch('/api/posts')
-        if (!response.ok) {
-          throw new Error('Failed to fetch posts')
-        }
         const data = await response.json()
-        setPosts(data)
-      } catch (error) {
-        console.error('Error fetching posts:', error)
+
+        if (Array.isArray(data)) {
+          setPosts(data)
+        } else if (data.posts && Array.isArray(data.posts)) {
+          setPosts(data.posts)
+        } else {
+          console.error('Unexpected data format:', data)
+          setPosts([])
+        }
+      } catch (err) {
+        console.error('Error fetching posts:', err)
+        setError('게시글을 불러오는데 실패했습니다.')
+        setPosts([])
       } finally {
-        setIsLoading(false)
+        setLoading(false)
       }
     }
 
     fetchPosts()
   }, [])
 
-  if (isLoading)
-    return (
-      <div>
-        <Loading pageName="게시글" />
-      </div>
-    )
-
-  return (
+  // 기본 레이아웃 컴포넌트
+  const MainLayout = ({ children }: { children: React.ReactNode }) => (
     <div className="flex min-h-screen bg-gray-50">
-      {/* 카테고리 사이드바 */}
       <Sidebar categoryId={null} />
-
-      {/* 메인 컨텐츠 */}
       <div className="flex-1 pl-4 p-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8 flex justify-between items-center">
@@ -70,38 +68,73 @@ export default function Board() {
               </Link>
             )}
           </div>
-
-          <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
-            {posts.map((post) => (
-              <Link href={`/board/post/${post._id}`} key={post._id}>
-                <div className="border-b p-6 hover:bg-gray-50 transition-colors duration-200">
-                  <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      {post.title}
-                    </h2>
-                    <span className="text-sm text-gray-500">
-                      {new Date(post.date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <span className="text-gray-500">작성자: {post.author}</span>
-                    <span className="text-gray-500">
-                      {' '}
-                      | 카테고리: {post.categoryName}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {posts.length === 0 && (
-            <div className="text-center p-4 text-gray-500">
-              게시글이 없습니다.
-            </div>
-          )}
+          {children}
         </div>
       </div>
     </div>
+  )
+
+  if (status === 'loading' || loading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center min-h-[200px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <MainLayout>
+        <div className="text-center text-red-500 py-4">{error}</div>
+      </MainLayout>
+    )
+  }
+
+  if (!Array.isArray(posts)) {
+    return (
+      <MainLayout>
+        <div className="text-center py-4">데이터 형식이 올바르지 않습니다.</div>
+      </MainLayout>
+    )
+  }
+
+  if (posts.length === 0) {
+    return (
+      <MainLayout>
+        <div className="text-center py-4 bg-white border rounded-lg shadow-sm p-8">
+          게시글이 없습니다.
+        </div>
+      </MainLayout>
+    )
+  }
+
+  return (
+    <MainLayout>
+      <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
+        {posts.map((post) => (
+          <Link href={`/board/post/${post._id}`} key={post._id}>
+            <div className="border-b p-6 hover:bg-gray-50 transition-colors duration-200">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  {post.title}
+                </h2>
+                <span className="text-sm text-gray-500">
+                  {new Date(post.date).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="text-sm text-gray-600">
+                <span className="text-gray-500">작성자: {post.author}</span>
+                <span className="text-gray-500">
+                  {' '}
+                  | 카테고리: {post.categoryName}
+                </span>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </MainLayout>
   )
 }
