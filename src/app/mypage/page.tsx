@@ -114,7 +114,7 @@ export default function MyPage() {
         const data = await response.json()
         const favoriteMovieIds = data.movies || []
 
-        // 찜한 영화 ID로 영화 정보 가져오기
+        // 찜한 영화 ID로 영화 정보 가져��기
         const favoriteMoviePromises = favoriteMovieIds.map(
           async (id: number) => {
             const movieResponse = await fetch(
@@ -187,24 +187,39 @@ export default function MyPage() {
         body: JSON.stringify({ name: newName }),
       })
 
+      if (!response.ok) {
+        throw new Error('이름 변경에 실패했습니다.')
+      }
+
       const data = await response.json()
+
       if (data.success) {
-        setUserData((prev: UserData | null) => ({
-          ...prev,
-          name: newName,
-          image: prev?.image || '',
-          email: prev?.email || '',
-          createdAt: prev?.createdAt || '',
-        }))
-        alert('이름이 변경되었습니다.')
+        // 사용자 데이터 업데이트
+        setUserData((prev) => {
+          if (!prev) return null
+          return {
+            ...prev,
+            name: newName,
+          }
+        })
+
+        // 세션 데이터 새로고침을 위해 페이지 리로드
+        router.refresh()
+
+        alert('이름이 성공적으로 변경되었습니다.')
       } else {
-        alert(data.error || '이름 변경 실패')
+        throw new Error(data.error || '이름 변경에 실패했습니다.')
       }
     } catch (error) {
       console.error('Error changing name:', error)
-      alert('이름 변경 중 오류가 발생했습니다.')
+      alert(
+        error instanceof Error
+          ? error.message
+          : '이름 변경 중 오류가 발생했습니다.'
+      )
+    } finally {
+      setModalOpen(false)
     }
-    setModalOpen(false)
   }
 
   if (isLoading) {
