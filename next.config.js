@@ -16,7 +16,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  postcss: true,
 }
 
 module.exports = nextConfig
